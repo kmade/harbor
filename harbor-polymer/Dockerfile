@@ -2,16 +2,49 @@ FROM kmade/harbor-node:latest
 
 MAINTAINER Dragosh <oancea.dragosh@gmail.com>
 LABEL vendor="I{ustomMade"
-
-
-# replace shell with bash so we can source files
 RUN rm /bin/sh && ln -s /bin/bash /bin/sh
+ARG DEBIAN_FRONTEND=noninteractive
+# add webupd8 repository
+RUN \
+    echo "===> add webupd8 repository..."  && \
+    echo "deb http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" | tee /etc/apt/sources.list.d/webupd8team-java.list  && \
+    echo "deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" | tee -a /etc/apt/sources.list.d/webupd8team-java.list  && \
+    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys EEA14886  && \
+    apt-get update  && \
+    \
+    \
+    echo "===> install Java"  && \
+    echo debconf shared/accepted-oracle-license-v1-1 select true | debconf-set-selections  && \
+    echo debconf shared/accepted-oracle-license-v1-1 seen true | debconf-set-selections  && \
+    DEBIAN_FRONTEND=noninteractive  apt-get install -y --force-yes oracle-java8-installer oracle-java8-set-default  && \
+    \
+    \
+    echo "===> clean up..."  && \
+    rm -rf /var/cache/oracle-jdk8-installer  && \
+    apt-get clean  && \
+    rm -rf /var/lib/apt/lists/*
 
-# update the repository sources list
-# and install dependencies
+# install Chrome
+RUN apt-get install -y curl
+RUN curl -sL https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
+RUN echo 'deb http://dl.google.com/linux/chrome/deb/ stable main' >> /etc/apt/sources.list.d/google.list
+
+
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends apt-utils \
+    && apt-get install -y google-chrome-stable \
+    && apt-get install -y --no-install-recommends apt-utils software-properties-common build-essential\
     && apt-get install -y git \
-    && apt-get install -y curl \
-    && apt-get -y autoclean
-RUN npm i -g polymer-cli bower --loglevel error
+    && apt-get install -y xvfb
+
+RUN npm i -g \
+  polymer-cli \
+  bower \
+  web-component-tester \
+  --loglevel error \
+  --unsafe-perm
+# configure bower
+
+RUN mkdir -p /usr/src/app
+WORKDIR /usr/src/app
+
+CMD polymer
