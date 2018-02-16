@@ -12,9 +12,11 @@ LABEL vendor="I{ustomMade"
 # Application root
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
+VOLUME ["/usr/src/app"]
 ADD . /usr/src/app
 ## Exposing
 EXPOSE $PORT 5858 9229
+
 # HEALTHCHECK
 RUN apk add --no-cache curl
 HEALTHCHECK CMD curl -fs http://localhost:$PORT || exit 1
